@@ -1,3 +1,15 @@
+# project
+LDA/*.json
+LDA/*.state
+LDA/*.id2word
+LDA/*.pny
+LDA/*.mm
+LDA/*.index
+exps/*
+data/*
+lluis/
+models/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
