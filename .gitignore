@@ -2,9 +2,11 @@
 *.json
 *.state
 *.id2word
-*.pny
+*.npy
 *.mm
 *.index
+*.dict
+*.lda
 exps/*
 data/*
 lluis/
