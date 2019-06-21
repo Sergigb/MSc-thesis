@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 
 import torch
 from torchvision import models
@@ -19,6 +20,10 @@ check https://github.com/lluisgomez/TextTopicNet/blob/master/experiments/voc_200
 
 right now we can only classify usign the TextTopicNet architecture
 """
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--exp_name', type=str, default=40, help='Number of topics of the LDA space')
+
 
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'

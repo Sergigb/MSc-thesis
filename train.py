@@ -7,7 +7,7 @@ import argparse
 
 from utils import Experiment, update_lr
 from model import CNN
-from loss import nll_loss, cross_entropy
+from loss import nll_loss
 from data_loader import get_wiki_data_loader
 
 
@@ -90,11 +90,12 @@ def main(args):
             loss.backward()
             optimizer.step()
 
+            exp.save_loss(epoch, step, loss)
             print('Epoch ' + str(epoch+1) + '/' + str(num_epochs) + ' - Step ' + str(step+1) + '/' +
                   str(len(data_loader)) + ' - Loss: ' + str(float(loss)))
 
         if (epoch%args.save_step == 0 and epoch > 0):
-            exp.save_loss(epoch, step, loss)
+            exp.save_model(epoch, cnn)
     
     exp.save_model('last', cnn)
 
