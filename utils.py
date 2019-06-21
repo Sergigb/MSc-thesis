@@ -51,6 +51,8 @@ class Experiment:
                 f.write('Out_dim: default\n')
             else:
                 f.write('Out_dim: ' + str(args.out_dim) + '\n')
+            f.write('Decay: ' + str(args.decay) + '\n')
+            f.write('Decay step: ' + str(args.decay_step) + '\n')
             f.write('Batch size: ' + str(args.bs) + '\n')
             f.write('Labels path: ' + str(args.json_labels_path) + '\n')
             f.write('TextTopicNetwork architecture: ' + str(args.ttn) + '\n')

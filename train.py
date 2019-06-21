@@ -70,8 +70,8 @@ def main(args):
     learning_rate = args.lr
 
     for epoch in range(num_epochs):
-        if (epoch%20 == 0):  # move this to the utils file
-            learning_rate = learning_rate * 0.1
+        if (epoch%args.decay_step == 0):  # move this to the utils file
+            learning_rate = learning_rate * args.decay
             for param_group in optimizer.param_groups:
                 param_group['lr'] = learning_rate
 
@@ -95,10 +95,7 @@ def main(args):
             print('Epoch ' + str(epoch+1) + '/' + str(num_epochs) + ' - Step ' + str(step+1) + '/' +
                   str(len(data_loader)) + ' - Loss: ' + str(float(loss)))
 
-        time.sleep(120)
-        if args.decay != 0:
-            update_lr(args.lr, args.decay, epoch+1, optimizer)
-        exp.save_model('last', cnn)
+    exp.save_model('last', cnn)
 
 
 if __name__ == '__main__':
@@ -122,8 +119,10 @@ if __name__ == '__main__':
                         help='Momentum, might be dependent on the optimizer')
     parser.add_argument('--out_dim', type=int, default=-1,
                         help='Number size of the output vector of the CNN')
-    parser.add_argument('--decay', type=float, default=0,
+    parser.add_argument('--decay', type=float, default=0.1,
                         help='Decay of the learning rate')
+    parser.add_argument('--decay_step', type=int, default=20,
+                        help='')
     parser.add_argument('-ne', type=int, default=100, help='Number of epochs')
     parser.add_argument('-bs', type=int, default=1024, help='Size of the batch')
     parser.add_argument('-ttn', action='store_true', help='If true, replicates the TextTopicNet \
