@@ -42,12 +42,21 @@ class CLEF_Wikipedia_dataset(data.Dataset):
 
 
 def collate_fn(data):
-    images, labels = zip(*data)
+    if len(data[0]) == 2:
+        images, labels = zip(*data)
 
-    images = torch.stack(images, 0)
-    labels = torch.stack(labels, 0)
+        images = torch.stack(images, 0)
+        labels = torch.stack(labels, 0)
 
-    return images, labels
+        return images, labels
+    else:
+        images, labels, ids = zip(*data)
+
+        images = torch.stack(images, 0)
+        labels = torch.stack(labels, 0)
+
+        return images, labels, ids
+
 
 
 def get_wiki_data_loader(dataset_path, json_path, transform, 

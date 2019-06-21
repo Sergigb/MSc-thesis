@@ -22,9 +22,9 @@ right now we can only classify usign the TextTopicNet architecture
 
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
-model_path = 'models/ttn3.pth'
+model_path = 'models/mdn-1kernel6.pth'
 feat_layer = 4  # feature layer, check list(model.alexnet.children())
-feat_root = 'data/features/ttn3-' + str(feat_layer) + '/'
+feat_root = 'data/features/mdn-1kernel6-' + str(feat_layer) + '/'
 
 if not os.path.isdir('data/features'):
     os.mkdir('data/features')
@@ -39,7 +39,7 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    model = CNN(40, 1, mixture_model=False)
+    model = CNN(40, 1, mixture_model=True)
     #model = models.alexnet(pretrained=False, num_classes=40)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -77,11 +77,11 @@ if not os.path.isdir(feat_root):  # extract features
             sys.stdout.flush()
 print("")
 
-svm_path = 'data/svm-tt3/'
+svm_path = 'data/svm-mdn-1kernel6/'
 gt_path = '../datasets/VOCdevkit/VOC2007-train/ImageSets/Main/'
 gt_path_test = '../datasets/VOCdevkit/VOC2007-val/ImageSets/Main/'
 scaler_path = 'data/scaler'
-scaler_fname = 'scaler-layer-' + str(feat_layer) + '-ttn3.pkl'
+scaler_fname = 'scaler-layer-' + str(feat_layer) + '-mdn-1kernel6.pkl'
 
 if not os.path.exists(svm_path):
     os.mkdir(svm_path)

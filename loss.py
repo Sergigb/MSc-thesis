@@ -27,11 +27,3 @@ def nll_loss(alpha, sigma, mu, t):
     loss = torch.mean(-torch.log(loss))
     return loss
 
-
-def cross_entropy(pred, soft_targets):
-    # return torch.mean(torch.sum(- soft_targets * logsoftmax(pred), 1))
-    cont = torch.mean(soft_targets * logsigmoid(pred) + (1 - soft_targets) * log(1 - sigmoid(pred)), 1)
-    # scalar = torch.FloatTensor([0]).cuda()
-    # cont = torch.sum(max(pred, scalar.expand_as(pred)) - pred*soft_targets + log(1 + exp(-pred)), 1)
-    return -torch.sum(cont)
-
