@@ -27,9 +27,9 @@ parser.add_argument('--exp_name', type=str, default=40, help='Number of topics o
 
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
-model_path = 'models/mdn-1kernel6.pth'
+model_path = 'models/mdn-1kernel7.pth'
 feat_layer = 4  # feature layer, check list(model.alexnet.children())
-feat_root = 'data/features/mdn-1kernel6-' + str(feat_layer) + '/'
+feat_root = 'data/features/mdn-1kernel7-' + str(feat_layer) + '/'
 
 if not os.path.isdir('data/features'):
     os.mkdir('data/features')
@@ -82,11 +82,11 @@ if not os.path.isdir(feat_root):  # extract features
             sys.stdout.flush()
 print("")
 
-svm_path = 'data/svm-mdn-1kernel6/'
+svm_path = 'data/svm-mdn-1kernel7/'
 gt_path = '../datasets/VOCdevkit/VOC2007-train/ImageSets/Main/'
 gt_path_test = '../datasets/VOCdevkit/VOC2007-val/ImageSets/Main/'
 scaler_path = 'data/scaler'
-scaler_fname = 'scaler-layer-' + str(feat_layer) + '-mdn-1kernel6.pkl'
+scaler_fname = 'scaler-layer-' + str(feat_layer) + '-mdn-1kernel7.pkl'
 
 if not os.path.exists(svm_path):
     os.mkdir(svm_path)
