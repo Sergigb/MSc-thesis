@@ -13,8 +13,8 @@ from model import CNN
 from data_loader import get_wiki_data_loader
 
 mixture_mode = True
+n_kernels = 2
 
-n_kernels = 3
 
 def imscatter(x, y, image, ax=None, zoom=2.):
     if ax is None:
@@ -33,10 +33,10 @@ def imscatter(x, y, image, ax=None, zoom=2.):
     ax.autoscale()
     return artists
 
-emb_filename = 'data/2d-embeddings-3mdn6-2.npy'
-ids_filename = 'data/ids-embeddings-3mdn6-2.pkl'
-alpha_filename = 'data/alpha.npy'
-sigma_filename = 'data/sigmas.npy'
+emb_filename = 'data/2d-embeddings-2mdn5-2.npy'
+ids_filename = 'data/ids-embeddings-2mdn5-2.pkl'
+alpha_filename = 'data/alpha-2mdn5-2.npy'
+sigma_filename = 'data/sigma-2mdn5-2.npy'
 
 if os.path.isfile(emb_filename):
     X_embedded = np.load(emb_filename)
@@ -60,7 +60,7 @@ else:
                                        transform, batch_size, shuffle=True,
                                        num_workers=4, return_ids=True)
 
-    model_path = 'models/mdn-3kernel6.pth'
+    model_path = 'models/mdn-2kernel5.pth'
     model = CNN(40, n_kernels, out_dim=256, mixture_model=mixture_mode)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -107,7 +107,8 @@ else:
     with open(ids_filename, 'wb') as handle:
         pickle.dump(ids, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    X_embedded = TSNE(n_components=2, perplexity=40, early_exaggeration=24.0, verbose=1, learning_rate=500.0).fit_transform(X)
+    X_embedded = TSNE(n_components=2, perplexity=50, early_exaggeration=64.0, verbose=1,
+                      learning_rate=500.0, n_iter=3000).fit_transform(X)
     print(X_embedded.shape)
     np.save(emb_filename, X_embedded)
     np.save(alpha_filename, alpha_values)
@@ -119,19 +120,19 @@ fig, ax = plt.subplots()
 idxs = []
 
 for i in range(20000):
-    idx = int(np.random.choice(len(ids), 1))
-    idxs.append(idx)
-    image_filename = ids[idx]
-    image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
-    imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
+   idx = int(np.random.choice(len(ids), 1))
+   idxs.append(idx)
+   image_filename = ids[idx]
+   image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
+   imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
 
-plt.show(block=False)
+plt.show()
 
-#sigma_norm =  (sigma_values-min(sigma_values)) / (max(sigma_values)-min(sigma_values))
-#plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=sigma_norm[:])
-#plt.show()
+# sigma_norm = (sigma_values-min(sigma_values)) / (max(sigma_values)-min(sigma_values))
+# plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=sigma_norm[:])
+# plt.show()
 
-#alpha_norm =  (alpha_values-min(alpha_values)) / (max(alpha_values)-min(alpha_values))
-#plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=alpha_norm)
-#plt.show()
+# alpha_norm = (alpha_values-min(alpha_values)) / (max(alpha_values)-min(alpha_values))
+# plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=alpha_norm)
+# plt.show()
 

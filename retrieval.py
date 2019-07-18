@@ -8,11 +8,11 @@ import gensim
 import scipy.stats as sp
 from preprocess_text import preprocess_imageclef
 import torch
-from torchvision import models
 import torchvision.transforms as transforms
 from scipy.spatial import distance
 
 from model import CNN
+from utils import likelihood
 
 num_topics = 40
 type_data_list = ['test']
@@ -71,7 +71,7 @@ feat_root = 'data/features/retrieval-mdn-30kernel5/'
 mixture_model = True
 n_kernels = 30
 out_dim = 256
-dist = 'euclidean'  # distance used in the retrieval part, either 'entropy' or 'euclidean'
+dist = 'euclidean'  # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
 
 if not os.path.isdir('data/features'):
     os.mkdir('data/features')
@@ -87,15 +87,16 @@ if not os.path.isdir(feat_root):  # extract features
     ])
 
     model = CNN(40, n_kernels, mixture_model=mixture_model, out_dim=out_dim)
-    #model = models.alexnet(pretrained=False, num_classes=40)
+    # model = models.alexnet(pretrained=False, num_classes=40)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
     if torch.cuda.is_available():
         model.cuda()
 
-    #image_names = [f for f in os.listdir(images_root)]
-    im_txt_pair_wd = open('../datasets/Wikipedia/wikipedia_dataset/'+str(type_data_list[0])+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
+    # image_names = [f for f in os.listdir(images_root)]
+    im_txt_pair_wd = open('../datasets/Wikipedia/wikipedia_dataset/' +
+                          str(type_data_list[0])+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
     img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
 
     progress = 0
@@ -109,17 +110,19 @@ if not os.path.isdir(feat_root):  # extract features
 
         if not mixture_model:
             representation = model(im)
-            #representation = torch.nn.functional.softmax(representation)
+            # representation = torch.nn.functional.softmax(representation)
         else:
-            _, _, representation = model(im)
+            alpha, sigma, representation = model(im)
 
         np.save(os.path.join(feat_root, filename), representation.cpu().detach().numpy().squeeze())
+        if mixture_model:
+            np.save(os.path.join(feat_root, filename + '-alpha'), alpha.cpu().detach().numpy().squeeze())
+            np.save(os.path.join(feat_root, filename + '-sigma'), sigma.cpu().detach().numpy().squeeze())
 
         progress += 1
         sys.stdout.write("\rCompleted:  " + str(progress) + "/" + str(len(img_files)))
         sys.stdout.flush()
 print("")
-
 
 ### Start : Generating text representation of wikipedia dataset for performing multi modal retrieval
 
@@ -198,10 +201,16 @@ for type_data in type_data_list:
              'r'))
 
     image_ttp = {}
+    image_alphas = {}
+    image_sigmas = {}
     for i in GT_img2txt.keys():
         sample = i
         value = np.load(image_rep + i + '.jpg.npy')
+        alpha = np.load(image_rep + i + '.jpg-alpha.npy')
+        sigma = np.load(image_rep + i + '.jpg-sigma.npy')
         image_ttp[sample] = value
+        image_alphas[sample] = alpha
+        image_sigmas[sample] = sigma
 
     # Convert text_rep to numpy format
     text_ttp = {}
@@ -210,49 +219,59 @@ for type_data in type_data_list:
     # IMPORTANT NOTE : always sort the images and text in lexi order !!
     # If Query type is input=image, output=text
     mAP = 0
+    order_of_images = sorted(image_ttp.keys())
+    order_of_texts = sorted(text_ttp.keys())
+    counter = 0
     if query_type == 'img2txt':
-        counter = 0
-        order_of_images = sorted(image_ttp.keys())
-        order_of_texts = sorted(text_ttp.keys())
         for given_image in order_of_images:
             sys.stdout.write('\rPerforming retrieval for document number : ' + str(counter))
             sys.stdout.flush()
+
             score_texts = []
             image_reps = image_ttp[given_image]
+            image_alpha = image_alphas[given_image]
+            image_sigma = image_sigmas[given_image]
             for given_text in order_of_texts:
-            #for i in range image_reps.shape[0]:
-                for j in range(n_kernels):
-                    image_rep = image_reps[j*40:(j+1)*40]
-                    text_reps = text_ttp[given_text]
-                    if dist == 'euclidean':
+                text_reps = text_ttp[given_text]
+                if dist == 'euclidean':
+                    for j in range(n_kernels):
+                        image_rep = image_reps[j * 40:(j + 1) * 40]
                         given_score = distance.euclidean(text_reps, image_rep)
-                    elif dist == 'entropy':
-                        given_score = sp.entropy(text_reps, image_rep)
+                        score_texts.append((given_text, given_score))
+                elif dist == 'entropy':
+                    given_score = sp.entropy(text_reps, image_reps)
+                    score_texts.append((given_text, given_score))
+                elif dist == 'probability':
+                    given_score = 1 - likelihood(image_alpha, image_sigma, image_reps, text_reps)
                     score_texts.append((given_text, given_score))
             sorted_scores = sorted(score_texts, key=lambda x: x[1], reverse=False)
             mAP = mAP + get_AP_img2txt(sorted_scores, given_image, top_k=len(order_of_texts))
             counter += 1
         print('MAP img2txt : ' + str(float(mAP / len(image_ttp.keys()))), 'red')
     if query_type == 'txt2img':
-        counter = 0
-        order_of_images = sorted(image_ttp.keys())
-        order_of_texts = sorted(text_ttp.keys())
         for given_text in order_of_texts:
             sys.stdout.write('\rPerforming retrieval for document number : ' + str(counter))
             sys.stdout.flush()
+
             score_images = []
             text_reps = text_ttp[given_text]
             for given_image in order_of_images:
                 image_reps = image_ttp[given_image]
-                for j in range(n_kernels):
-                    image_rep = image_reps[j*40:(j+1)*40]
-                    if dist == 'euclidean':
+                image_alpha = image_alphas[given_image]
+                image_sigma = image_sigmas[given_image]
+                if dist == 'euclidean':
+                    for j in range(n_kernels):
+                        image_rep = image_reps[j*40:(j+1)*40]
                         given_score = distance.euclidean(text_reps, image_rep)
-                    elif dist == 'entropy':
-                        given_score = sp.entropy(text_reps, image_rep)
+                        score_images.append((given_image, given_score))
+                elif dist == 'entropy':
+                    given_score = sp.entropy(text_reps, image_rep)
+                    score_images.append((given_image, given_score))
+                elif dist == 'probability':
+                    given_score = 1 - likelihood(image_alpha, image_sigma, image_reps, text_reps)
                     score_images.append((given_image, given_score))
             sorted_scores = sorted(score_images, key=lambda x: x[1], reverse=False)
-            mAP = mAP + get_AP_txt2img(sorted_scores, given_text, top_k=l(order_of_images))
+            mAP = mAP + get_AP_txt2img(sorted_scores, given_text, top_k=len(order_of_images))
             counter += 1
         print('MAP txt2img : ' + str(float(mAP / len(text_ttp.keys()))), 'red')
 print("")
