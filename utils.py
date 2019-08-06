@@ -68,6 +68,16 @@ class Experiment:
         with open(file_path, 'a+') as f:
             f.write('Epoch: ' + str(epoch) + ', step: ' + str(step) + ', loss: ' + str(float(loss)) + '\n')
 
+    def save_loss_epoch(self, epoch, losses):
+        """
+        Saves the mean loss of the current epoch in a text file.
+        :param epoch: current epoch
+        :param losses: list of losses of the current epoch
+        """
+        file_path = os.path.join(self.exp_path, 'mean_losses.txt')
+        with open(file_path, 'a+') as f:
+            f.write('Epoch: ' + str(epoch) + ', loss: ' + str(float(np.mean(np.array(losses)))) + '\n')
+
     def save_model(self, epoch, model):
         """
         Saves the model at the current epoch in the model folder.

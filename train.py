@@ -59,6 +59,7 @@ def main(args):
 
     optimizer = optim.SGD(cnn.parameters(), lr=args.lr, momentum=args.mm)
     # optimizer = optim.Adam(cnn.parameters())
+    # optimizer = optim.RMSprop(cnn.parameters(), lr= args.lr, momentum=args.mm)
 
     exp = Experiment(args, args.exp_name)
 
@@ -68,9 +69,10 @@ def main(args):
         loss_fn = nll_loss
 
     learning_rate = args.lr
+    losses = []
 
     for epoch in range(num_epochs):
-        if (epoch%args.decay_step == 0):  # move this to the utils file
+        if (epoch%args.decay_step == 0 and epoch > 0):  # move this to the utils file
             learning_rate = learning_rate * args.decay
             for param_group in optimizer.param_groups:
                 param_group['lr'] = learning_rate
@@ -90,10 +92,12 @@ def main(args):
             loss.backward()
             optimizer.step()
 
+            losses.append(float(loss))
             exp.save_loss(epoch, step, loss)
             print('Epoch ' + str(epoch+1) + '/' + str(num_epochs) + ' - Step ' + str(step+1) + '/' +
                   str(len(data_loader)) + ' - Loss: ' + str(float(loss)))
-
+        exp.save_loss_epoch(epoch, losses)
+        losses = []
         if (epoch%args.save_step == 0 and epoch > 0):
             exp.save_model(epoch, cnn)
     

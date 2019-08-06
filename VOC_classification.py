@@ -20,16 +20,23 @@ check https://github.com/lluisgomez/TextTopicNet/blob/master/experiments/voc_200
 
 right now we can only classify usign the TextTopicNet architecture
 """
+print("")
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--exp_name', type=str, default=40, help='Number of topics of the LDA space')
+parser.add_argument('--model_path', type=str)
+args = parser.parse_args()
 
+model_path = args.model_path
+model_name = model_path.replace("/", "")
+
+print(model_path)
+print(model_name)
 
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
-model_path = 'models/mdn-1kernel6.pth'
+#model_path = 'models/mdn-1kernel6.pth'
 feat_layer = 4  # feature layer, check list(model.alexnet.children())
-feat_root = 'data/features/mdn-1kernel6-' + str(feat_layer) + '/'
+feat_root = 'data/features/feats-' + str(feat_layer) + model_name + '/'
 
 if not os.path.isdir('data/features'):
     os.mkdir('data/features')
@@ -44,7 +51,7 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    model = CNN(40, 1, mixture_model=True)
+    model = CNN(40, 2, out_dim=256, mixture_model=True)
     #model = models.alexnet(pretrained=False, num_classes=40)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -78,15 +85,15 @@ if not os.path.isdir(feat_root):  # extract features
             np.save(os.path.join(feat_root, filename), lin_output.cpu().detach().numpy())
 
             progress += 1
-            sys.stdout.write("\rCompleted:  " + str(progress) + "/" + str(len(train_images) + len(val_images)))
-            sys.stdout.flush()
-print("")
+#            sys.stdout.write("\rCompleted:  " + str(progress) + "/" + str(len(train_images) + len(val_images)))
+#            sys.stdout.flush()
 
-svm_path = 'data/svm-mdn-1kernel6/'
+
+svm_path = 'data/svm-' + model_name + '/'
 gt_path = '../datasets/VOCdevkit/VOC2007-train/ImageSets/Main/'
 gt_path_test = '../datasets/VOCdevkit/VOC2007-val/ImageSets/Main/'
 scaler_path = 'data/scaler'
-scaler_fname = 'scaler-layer-' + str(feat_layer) + '-mdn-1kernel6.pkl'
+scaler_fname = 'scaler-layer-' + str(feat_layer) + model_name + '.pkl'
 
 if not os.path.exists(svm_path):
     os.mkdir(svm_path)
@@ -145,7 +152,7 @@ for cl in classes:
             bestAP = AP
             bestC = pow(0.5, c)
 
-    print " Best validation AP (class: "+cl+") :"+str(bestAP)+" found for C="+str(bestC)
+ #   print " Best validation AP (class: "+cl+") :"+str(bestAP)+" found for C="+str(bestC)
     mAP2=mAP2+bestAP
     X_all = np.concatenate((X, XX), axis=0)
     scaler = preprocessing.StandardScaler().fit(X_all)
@@ -155,7 +162,7 @@ for cl in classes:
     clf = svm.LinearSVC(C=bestC)
     clf.fit(X_all, y_all)
     joblib.dump(clf, svm_path + 'clf-'+cl+'-layer-'+str(feat_layer)+'.pkl')
-    print "  ... model saved as " + svm_path + 'clf-'+cl+'-layer-'+str(feat_layer)+'.pkl'
+  #  print "  ... model saved as " + svm_path + 'clf-'+cl+'-layer-'+str(feat_layer)+'.pkl'
 
 print "\nValidation mAP: "+str(mAP2/float(len(classes)))+" (this is an underestimate, you must run VOC_eval.m for \
       mAP taking into account don't care objects)"
@@ -167,7 +174,7 @@ mAP2=0
 for cl in classes:
     with open(gt_path_test+cl+'_test.txt') as f:
         content = f.readlines()
-    print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
+ #   print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
     aux = np.load(feat_root+content[0].split(' ')[0]+'.jpg.npy')
     X = np.zeros((len(content),(aux.flatten()).shape[0]), dtype=np.float32)
     y = np.zeros(len(content))
@@ -179,14 +186,14 @@ for cl in classes:
         y[idx]   = max(0,int(data[1]))
         idx += 1
 
-    print "  ... loading model from " + svm_path + 'clf-'+cl+'-layer-'+str(feat_layer)+'.pkl'
+#    print "  ... loading model from " + svm_path + 'clf-'+cl+'-layer-'+str(feat_layer)+'.pkl'
     clf = joblib.load(svm_path + 'clf-'+cl+'-layer-'+str(feat_layer)+'.pkl')
     scaler = joblib.load(scaler_path + scaler_fname)
     X = scaler.transform(X)
 
     y_ = clf.decision_function(X)
     AP = average_precision_score(y, y_)
-    print "  ... Test AP: "+str(AP)
+#    print "  ... Test AP: "+str(AP)
     mAP2 += AP
 
     # fr = open(res_root+'RES_cls_test_'+cl+'.txt','w+')
