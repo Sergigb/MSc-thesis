@@ -9,13 +9,15 @@ import torch
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from scipy.stats import kde
+import gensim
 
 from model import CNN
 from data_loader import get_wiki_data_loader
+from preprocess_text import preprocess_imageclef
 
 mixture_mode = True
 n_kernels = 3
-n_topics = 10
+n_topics = 40
 
 
 def imscatter(x, y, image, ax=None, zoom=2.):
@@ -37,10 +39,10 @@ def imscatter(x, y, image, ax=None, zoom=2.):
     ax.autoscale()
     return artists
 
-emb_filename = 'data/2d-embeddings-2mdn5-2.npy'
-ids_filename = 'data/ids-embeddings-2mdn5-2.pkl'
-alpha_filename = 'data/alpha-2mdn5-2.npy'
-sigma_filename = 'data/sigma-2mdn5-2.npy'
+emb_filename = 'data/2d-embeddings-mdn-3kernel-embeddings.npy'
+ids_filename = 'data/ids-embeddings-mdn-3kernel-embeddings.pkl'
+alpha_filename = 'data/alpha-mdn-3kernel-embeddings.npy'
+sigma_filename = 'data/sigma-mdn-3kernel-embeddings.npy'
 
 if os.path.isfile(emb_filename):
     X_embedded = np.load(emb_filename)
@@ -64,7 +66,7 @@ else:
                                        transform, batch_size, shuffle=True,
                                        num_workers=8, return_ids=True)
 
-    model_path = 'models/mdn-10topic-3kernel.pth'
+    model_path = 'models/mdn-3kernel6.pth'
 
     model = CNN(n_topics, n_kernels, out_dim=256, mixture_model=mixture_mode)
     model.load_state_dict(torch.load(model_path))
@@ -101,6 +103,33 @@ else:
 
         print('Step ' + str(step+1) + '/' + str(len(data_loader)))
     print(len(X))
+
+    words = ['airplane', 'car', 'universe', 'planet', 'race car', 'football', 'sport', 'stadium',
+             'jet', 'gun', 'computer', 'map', 'sky', 'building', 'train', 'transport']
+
+    dictionary = gensim.corpora.Dictionary.load('./LDA/dictionary_original.dict')
+    ldamodel = gensim.models.ldamulticore.LdaMulticore.load('./LDA/ldamodel' + str(n_topics) + '_original.lda',
+                                                            mmap='r')
+
+    for word in words:
+        process = preprocess_imageclef(word)
+
+        if process[1] != '':
+            tokens = process[0]
+            bow_vector = dictionary.doc2bow(tokens)
+            lda_vector = ldamodel.get_document_topics(bow_vector, minimum_probability=None)
+
+            lda_vector = sorted(lda_vector, key=lambda x: x[1], reverse=True)
+            topic_prob = {}
+            for instance in lda_vector:
+                topic_prob[instance[0]] = float(instance[1])
+            labels = []
+            for topic_num in range(0, n_topics):
+                if topic_num in topic_prob.keys():
+                    labels.append(topic_prob[topic_num])
+                else:
+                    labels.append(0)
+
     X = np.array(X)
     alpha_values = np.array(alpha_values)
     sigma_values = np.array(sigma_values)
@@ -121,51 +150,19 @@ else:
 
     print("finished!")
 
-# fig, ax = plt.subplots()
-# idxs = []
-#
+fig, ax = plt.subplots()
+idxs = []
+
 # scatter random images
-# for i in range(20000):
-#     idx = int(np.random.choice(len(ids), 1))
-#     idxs.append(idx)
-#     image_filename = ids[idx]
-#     image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
-#     imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
-#
-# plt.show()
+for i in range(20000):
+    idx = int(np.random.choice(len(ids), 1))
+    idxs.append(idx)
+    image_filename = ids[idx]
+    image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
+    imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
 
-# plot consecutive pairs
-# plt.figure()
-# i = 0
-# offset = 550  # must be even
-# while i < 50:
-#     i += 1
-#     image_filename = ids[i+offset ]
-#     image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
-#     imscatter(X_embedded[i+offset, 0], X_embedded[i+offset, 1], image_filename, zoom=0.20)
-#
-#
-# plt.show()
-
-# sigma visualization
-sigma_norm = (sigma_values-min(sigma_values)) / (max(sigma_values)-min(sigma_values))
-plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=sigma_norm[:])
 plt.show()
 
-# alpha visualization
-# alpha_norm = (alpha_values-min(alpha_values)) / (max(alpha_values)-min(alpha_values))
-# plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=alpha_norm)
-# plt.show()
-
-# density visualization
-# nbins = 1500
-# k = kde.gaussian_kde([X_embedded[:, 0], X_embedded[:, 1]])
-# xi, yi = np.mgrid[X_embedded[:, 0].min():X_embedded[:, 0].max():nbins * 1j,
-#                   X_embedded[:, 0].min():X_embedded[:, 0].max():nbins * 1j]
-# zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-#
-# plt.pcolormesh(xi, yi, zi.reshape(xi.shape), cmap=plt.cm.Greens_r)
-# plt.show()
 
 
 

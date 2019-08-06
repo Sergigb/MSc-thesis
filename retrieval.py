@@ -10,11 +10,11 @@ from preprocess_text import preprocess_imageclef
 import torch
 import torchvision.transforms as transforms
 from scipy.spatial import distance
+import matplotlib.pyplot as plt
 
 from model import CNN
 from utils import likelihood
 
-num_topics = 40
 type_data_list = ['test']
 
 
@@ -71,7 +71,10 @@ feat_root = 'data/features/retrieval-mdn-30kernel5/'
 mixture_model = True
 n_kernels = 30
 out_dim = 256
-dist = 'euclidean'  # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
+num_topics = 40
+dist = 'probability'  # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
+
+print(model_path)
 
 if not os.path.isdir('data/features'):
     os.mkdir('data/features')
@@ -86,7 +89,7 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    model = CNN(40, n_kernels, mixture_model=mixture_model, out_dim=out_dim)
+    model = CNN(num_topics, n_kernels, mixture_model=mixture_model, out_dim=out_dim)
     # model = models.alexnet(pretrained=False, num_classes=40)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -133,6 +136,7 @@ min_prob_LDA = None
 
 # load id <-> term dictionary
 dictionary = gensim.corpora.Dictionary.load('./LDA/dictionary_original.dict')
+# dictionary.filter_extremes(no_below=20, no_above=0.5)  # comment this when using the original dictionary
 
 # load LDA model
 ldamodel = gensim.models.ldamulticore.LdaMulticore.load('./LDA/ldamodel' + str(num_topics) + '_original.lda', mmap='r')
@@ -163,7 +167,7 @@ for choose_set in choose_set_list:
             lda_vector = sorted(lda_vector, key=lambda x: x[1], reverse=True)
             topic_prob = {}
             for instance in lda_vector:
-                topic_prob[instance[0]] = instance[1]
+                topic_prob[instance[0]] = float(instance[1])
             labels = []
             for topic_num in range(0, num_topics):
                 if topic_num in topic_prob.keys():
@@ -235,7 +239,7 @@ for type_data in type_data_list:
                 text_reps = text_ttp[given_text]
                 if dist == 'euclidean':
                     for j in range(n_kernels):
-                        image_rep = image_reps[j * 40:(j + 1) * 40]
+                        image_rep = image_reps[j * num_topics:(j + 1) * num_topics]
                         given_score = distance.euclidean(text_reps, image_rep)
                         score_texts.append((given_text, given_score))
                 elif dist == 'entropy':
@@ -261,17 +265,36 @@ for type_data in type_data_list:
                 image_sigma = image_sigmas[given_image]
                 if dist == 'euclidean':
                     for j in range(n_kernels):
-                        image_rep = image_reps[j*40:(j+1)*40]
+                        image_rep = image_reps[j*num_topics:(j+1)*num_topics]
                         given_score = distance.euclidean(text_reps, image_rep)
                         score_images.append((given_image, given_score))
                 elif dist == 'entropy':
-                    given_score = sp.entropy(text_reps, image_rep)
+                    given_score = sp.entropy(text_reps, image_reps)
                     score_images.append((given_image, given_score))
                 elif dist == 'probability':
                     given_score = 1 - likelihood(image_alpha, image_sigma, image_reps, text_reps)
                     score_images.append((given_image, given_score))
             sorted_scores = sorted(score_images, key=lambda x: x[1], reverse=False)
+
+#            image_categories = ['art', 'biology', 'geography', 'history', 'literature', 'media', 'music', 'royalty',
+#                                'sport', 'warfare']  # List of document (image-text) categories in wikipedia dataset
+#            f, axarr = plt.subplots(2, 10)
+#            for i in range(20):
+#                if i - 10 < 0:
+#                    xi = i
+#                    yi = 0
+#                else:
+#                    xi = i - 10
+#                    yi = 1
+#                axarr[yi, xi].imshow(plt.imread('../datasets/Wikipedia/images_wd_256/' + sorted_scores[i+1][0] + '.jpg'))
+#                axarr[yi, xi].axis('off')
+#                axarr[yi, xi].set_title(image_categories[int(GT_img2txt[sorted_scores[i+1][0]][1])-1] + "("
+#                                        + str(sorted_scores[i+1][1])[:4] + ")")
+#            plt.suptitle(image_categories[int(GT_txt2img[given_text][1])-1])
+#            plt.show()
+#
             mAP = mAP + get_AP_txt2img(sorted_scores, given_text, top_k=len(order_of_images))
+
             counter += 1
         print('MAP txt2img : ' + str(float(mAP / len(text_ttp.keys()))), 'red')
 print("")

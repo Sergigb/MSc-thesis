@@ -16,7 +16,7 @@ print '  these probability distributions are then used as labels'
 print '  for training a CNN to predict the semantic context in which images appear'
 print '  (...)'
 
-NUM_TOPICS = 40
+NUM_TOPICS = 100
 db_dir  = '../../datasets/ImageCLEF_wikipedia/'
 train_dict_path = 'train_dict_ImageCLEF_Wikipedia.json'
 

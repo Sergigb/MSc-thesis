@@ -24,7 +24,7 @@ class CLEF_Wikipedia_dataset(data.Dataset):
         self.ids = list(self.train_labels.keys())
 
     def __getitem__(self, index):
-        t = torch.tensor(self.train_labels[self.ids[index]])
+        t = torch.tensor(self.train_labels[self.ids[index]]).type(torch.FloatTensor)
         image_path = self.ids[index]
         image = Image.open(os.path.join(self.dataset_path, image_path))
         image = image.convert('RGB')

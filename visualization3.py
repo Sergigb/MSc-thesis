@@ -7,6 +7,7 @@ from sklearn.manifold import TSNE
 import torchvision.transforms as transforms
 import torch
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from scipy.stats import kde
 
@@ -14,33 +15,12 @@ from model import CNN
 from data_loader import get_wiki_data_loader
 
 mixture_mode = True
-n_kernels = 3
-n_topics = 10
+n_kernels = 2
 
-
-def imscatter(x, y, image, ax=None, zoom=2.):
-    if ax is None:
-        ax = plt.gca()
-    try:
-        image = plt.imread(image)
-    except TypeError:
-        pass
-    im = OffsetImage(image, zoom=zoom, cmap=plt.get_cmap('gray'))
-    im.set_zorder(10)
-    x, y = np.atleast_1d(x, y)
-    artists = []
-    for x0, y0 in zip(x, y):
-        ab = AnnotationBbox(im, (x0, y0), xycoords='data', frameon=False)
-        ab.set_zorder(10)
-        artists.append(ax.add_artist(ab))
-    ax.update_datalim(np.column_stack([x, y]))
-    ax.autoscale()
-    return artists
-
-emb_filename = 'data/2d-embeddings-2mdn5-2.npy'
-ids_filename = 'data/ids-embeddings-2mdn5-2.pkl'
-alpha_filename = 'data/alpha-2mdn5-2.npy'
-sigma_filename = 'data/sigma-2mdn5-2.npy'
+emb_filename = 'data/3d-embeddings-2mdn5.npy'
+ids_filename = 'data/ids-embeddings-2mdn5-3d.pkl'
+alpha_filename = 'data/alpha-2mdn5-3d.npy'
+sigma_filename = 'data/sigma-2mdn5-3d.npy'
 
 if os.path.isfile(emb_filename):
     X_embedded = np.load(emb_filename)
@@ -62,11 +42,10 @@ else:
 
     data_loader = get_wiki_data_loader(dataset_path, json_labels_path,
                                        transform, batch_size, shuffle=True,
-                                       num_workers=8, return_ids=True)
+                                       num_workers=4, return_ids=True)
 
-    model_path = 'models/mdn-10topic-3kernel.pth'
-
-    model = CNN(n_topics, n_kernels, out_dim=256, mixture_model=mixture_mode)
+    model_path = 'models/mdn-2kernel5.pth'
+    model = CNN(40, n_kernels, out_dim=256, mixture_model=mixture_mode)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
@@ -95,7 +74,7 @@ else:
             sigmas_ = sigmas[i, :].cpu().detach().numpy()
             for j in range(n_kernels):
                 ids.append(image_ids[i])
-                X.append(embeddings[j*n_topics:(j+1)*n_topics])
+                X.append(embeddings[j*40:(j+1)*40])
                 alpha_values.append(alphas_[j])
                 sigma_values.append(sigmas_[j])
 
@@ -112,8 +91,8 @@ else:
     with open(ids_filename, 'wb') as handle:
         pickle.dump(ids, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-    X_embedded = TSNE(n_components=2, perplexity=50, early_exaggeration=64.0, verbose=1,
-                      learning_rate=500.0, n_iter=4000).fit_transform(X)
+    X_embedded = TSNE(n_components=3, perplexity=50, early_exaggeration=64.0, verbose=1,
+                      learning_rate=500.0).fit_transform(X)
     print(X_embedded.shape)
     np.save(emb_filename, X_embedded)
     np.save(alpha_filename, alpha_values)
@@ -122,50 +101,21 @@ else:
     print("finished!")
 
 # fig, ax = plt.subplots()
-# idxs = []
-#
-# scatter random images
-# for i in range(20000):
-#     idx = int(np.random.choice(len(ids), 1))
-#     idxs.append(idx)
-#     image_filename = ids[idx]
-#     image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
-#     imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
-#
-# plt.show()
-
-# plot consecutive pairs
-# plt.figure()
-# i = 0
-# offset = 550  # must be even
-# while i < 50:
-#     i += 1
-#     image_filename = ids[i+offset ]
-#     image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
-#     imscatter(X_embedded[i+offset, 0], X_embedded[i+offset, 1], image_filename, zoom=0.20)
-#
-#
-# plt.show()
 
 # sigma visualization
+
+fig = plt.figure()
+ax = Axes3D(fig)
+
+num = (len(X_embedded))
+num = num/32
+
 sigma_norm = (sigma_values-min(sigma_values)) / (max(sigma_values)-min(sigma_values))
-plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=sigma_norm[:])
+ax.scatter(X_embedded[:num, 0], X_embedded[:num, 1], X_embedded[:num, 2], c=sigma_norm[:num])
 plt.show()
 
 # alpha visualization
 # alpha_norm = (alpha_values-min(alpha_values)) / (max(alpha_values)-min(alpha_values))
 # plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=alpha_norm)
 # plt.show()
-
-# density visualization
-# nbins = 1500
-# k = kde.gaussian_kde([X_embedded[:, 0], X_embedded[:, 1]])
-# xi, yi = np.mgrid[X_embedded[:, 0].min():X_embedded[:, 0].max():nbins * 1j,
-#                   X_embedded[:, 0].min():X_embedded[:, 0].max():nbins * 1j]
-# zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-#
-# plt.pcolormesh(xi, yi, zi.reshape(xi.shape), cmap=plt.cm.Greens_r)
-# plt.show()
-
-
 
