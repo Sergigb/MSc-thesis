@@ -34,6 +34,7 @@ print(model_name)
 
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
+
 #model_path = 'models/mdn-1kernel6.pth'
 feat_layer = 4  # feature layer, check list(model.alexnet.children())
 feat_root = 'data/features/feats-' + str(feat_layer) + model_name + '/'

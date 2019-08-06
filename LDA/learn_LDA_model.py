@@ -14,7 +14,7 @@ import logging
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-NUM_TOPICS = 40
+NUM_TOPICS = 100
 db_dir  = '../../datasets/ImageCLEF_wikipedia/'
 train_dict_path = 'train_dict_ImageCLEF_Wikipedia.json'
 

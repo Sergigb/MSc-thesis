@@ -6,7 +6,35 @@ import numpy as np
 
 # try using https://pytorch.org/docs/stable/distributions.html
 def gaussian(t, mu, sigma):
-    return (1/torch.sqrt(2*np.pi*sigma)) * torch.exp((-1/(2*sigma)) * torch.norm((t-mu), 2, 1)**2)
+    return (1 / torch.sqrt(2 * np.pi * sigma)) * torch.exp((-1 / (2 * sigma)) * torch.norm((t - mu), 2, 1)**2)
+
+
+def gaussian_np(t, mu, sigma):
+    return (1 / np.sqrt(2 * np.pi * sigma)) * np.exp((-1 / (2 * sigma)) * np.linalg.norm((t - mu)) ** 2)
+
+
+def likelihood(alphas, sigmas, mus, x):
+    """
+    Computes the likelihood of a sample x given a gmm model
+    :param alphas: mixing coefficients
+    :param sigmas: covariances of each kernel
+    :param mus: expected value of each kernel
+    :param x: sample x
+    :return: likelihood
+    """
+    if len(alphas.shape) == 0:
+        alphas = np.expand_dims(alphas, 1)
+        sigmas = np.expand_dims(sigmas, 1)
+    k = alphas.shape[0]
+    t_dim = int(mus.shape[0] / k)
+
+    likelihood_ = 0.0
+
+    for i in range(k):
+        likelihood_t = gaussian_np(x, mus[i*t_dim:(i+1)*t_dim], sigmas[i])
+        likelihood_ += alphas[i] * likelihood_t  # posterior
+
+    return likelihood_
 
 
 def update_lr(lr, decay, epoch, optimizer):
