@@ -63,7 +63,7 @@ if not os.path.isdir(feat_root):  # extract features
         global lin_output
         lin_output = output
         return None
-    model.alexnet.classifier[feat_layer].register_forward_hook(lin_ret_hook)
+    model.cnn.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of the alexnet
 
     if torch.cuda.is_available():
         model.cuda()

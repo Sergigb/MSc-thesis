@@ -135,6 +135,8 @@ if __name__ == '__main__':
     parser.add_argument('-bs', type=int, default=1024, help='Size of the batch')
     parser.add_argument('-ttn', action='store_true', help='If true, replicates the TextTopicNet \
                         architecture')
+    parser.add_argument('-cnn', type=str, help='Name of the cnn used to extract the features, can \
+                        be alexnet or resnet', default="alexnet")
     args = parser.parse_args()
 
     main(args)
