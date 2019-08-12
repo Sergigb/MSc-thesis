@@ -49,9 +49,9 @@ def main(args):
     else:
         out_dim = args.out_dim
     if args.ttn:
-        cnn = CNN(args.n_topics, args.n_kernels, mixture_model=False)
+        cnn = CNN(args.n_topics, args.n_kernels, mixture_model=False, args.cnn)
     else:
-        cnn = CNN(args.n_topics, args.n_kernels, out_dim=out_dim)
+        cnn = CNN(args.n_topics, args.n_kernels, out_dim=out_dim, args.cnn)
 
     if torch.cuda.is_available():
         cnn.cuda()
