@@ -84,6 +84,7 @@ class Experiment:
             f.write('Batch size: ' + str(args.bs) + '\n')
             f.write('Labels path: ' + str(args.json_labels_path) + '\n')
             f.write('TextTopicNetwork architecture: ' + str(args.ttn) + '\n')
+            f.write('CNN: ' + args.cnn + '\n')
 
     def save_loss(self, epoch, step, loss):
         """
