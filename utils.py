@@ -32,7 +32,7 @@ def likelihood(alphas, sigmas, mus, x):
 
     for i in range(k):
         likelihood_t = gaussian_np(x, mus[i*t_dim:(i+1)*t_dim], sigmas[i])
-        likelihood_ += alphas[i] * likelihood_t  # posterior
+        likelihood_ += alphas[i] * likelihood_t
 
     return likelihood_
 

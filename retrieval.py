@@ -66,10 +66,10 @@ query_type = sys.argv[1]
 ### Start : Generating image representations of wikipedia dataset for performing multi modal retrieval
 text_dir_wd = '../datasets/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
 images_root = '../datasets/Wikipedia/images_wd_256/'
-model_path = 'models/mdn-30kernel5.pth'
-feat_root = 'data/features/retrieval-mdn-30kernel5/'
+model_path = 'models/mdn-3kernel6.pth'
+feat_root = 'data/features/mdn-3kernel6/'
 mixture_model = True
-n_kernels = 30
+n_kernels = 3
 out_dim = 256
 num_topics = 40
 dist = 'probability'  # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
@@ -238,13 +238,21 @@ for type_data in type_data_list:
             for given_text in order_of_texts:
                 text_reps = text_ttp[given_text]
                 if dist == 'euclidean':
+                    min_score = 99999999999
                     for j in range(n_kernels):
                         image_rep = image_reps[j * num_topics:(j + 1) * num_topics]
                         given_score = distance.euclidean(text_reps, image_rep)
-                        score_texts.append((given_text, given_score))
+                        if given_score < min_score:
+                            min_score = given_score
+                    score_texts.append((given_text, min_score))
                 elif dist == 'entropy':
-                    given_score = sp.entropy(text_reps, image_reps)
-                    score_texts.append((given_text, given_score))
+                    min_score = 99999999999
+                    for j in range(n_kernels):
+                        image_rep = image_reps[j * num_topics:(j + 1) * num_topics]
+                        given_score = sp.entropy(text_reps, image_rep)
+                        if given_score < min_score:
+                            min_score = given_score
+                    score_texts.append((given_text, min_score))
                 elif dist == 'probability':
                     given_score = 1 - likelihood(image_alpha, image_sigma, image_reps, text_reps)
                     score_texts.append((given_text, given_score))
@@ -264,13 +272,21 @@ for type_data in type_data_list:
                 image_alpha = image_alphas[given_image]
                 image_sigma = image_sigmas[given_image]
                 if dist == 'euclidean':
+                    min_score = 99999999999
                     for j in range(n_kernels):
                         image_rep = image_reps[j*num_topics:(j+1)*num_topics]
                         given_score = distance.euclidean(text_reps, image_rep)
-                        score_images.append((given_image, given_score))
+                        if given_score < min_score:
+                            min_score = given_score
+                    score_images.append((given_image, min_score))
                 elif dist == 'entropy':
-                    given_score = sp.entropy(text_reps, image_reps)
-                    score_images.append((given_image, given_score))
+                    min_score = 99999999999
+                    for j in range(n_kernels):
+                        image_rep = image_reps[j*num_topics:(j+1)*num_topics]
+                        given_score = sp.entropy(text_reps, image_rep)
+                        if given_score < min_score:
+                            min_score = given_score
+                    score_images.append((given_image, min_score))
                 elif dist == 'probability':
                     given_score = 1 - likelihood(image_alpha, image_sigma, image_reps, text_reps)
                     score_images.append((given_image, given_score))
