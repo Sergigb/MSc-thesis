@@ -24,6 +24,7 @@ print("")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', type=str)
+parser.add_argument('-k', type=int)
 args = parser.parse_args()
 
 model_path = args.model_path
@@ -52,7 +53,9 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    model = CNN(40, 1, out_dim=256, mixture_model=True)
+    #model = CNN(40, args.k, out_dim=256, mixture_model=True)
+    model = CNN(40, args.k, out_dim=256, mixture_model=True, cnn='resnet')
+
     #model = models.alexnet(pretrained=False, num_classes=40)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -63,7 +66,9 @@ if not os.path.isdir(feat_root):  # extract features
         global lin_output
         lin_output = output
         return None
-    model.alexnet.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of the alexnet
+
+    #model.cnn.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of alexnet
+    model.avgpool.register_forward_hook(lin_ret_hook) # in case of resnet
 
     if torch.cuda.is_available():
         model.cuda()
@@ -86,8 +91,9 @@ if not os.path.isdir(feat_root):  # extract features
             np.save(os.path.join(feat_root, filename), lin_output.cpu().detach().numpy())
 
             progress += 1
-#            sys.stdout.write("\rCompleted:  " + str(progress) + "/" + str(len(train_images) + len(val_images)))
-#            sys.stdout.flush()
+            sys.stdout.write("\rCompleted:  " + str(progress) + "/" + str(len(train_images) + len(val_images)))
+            sys.stdout.flush()
+print("")
 
 
 svm_path = 'data/svm-' + model_name + '/'
@@ -153,7 +159,7 @@ for cl in classes:
             bestAP = AP
             bestC = pow(0.5, c)
 
- #   print " Best validation AP (class: "+cl+") :"+str(bestAP)+" found for C="+str(bestC)
+    print " Best validation AP (class: "+cl+") :"+str(bestAP)+" found for C="+str(bestC)
     mAP2=mAP2+bestAP
     X_all = np.concatenate((X, XX), axis=0)
     scaler = preprocessing.StandardScaler().fit(X_all)
@@ -175,7 +181,7 @@ mAP2=0
 for cl in classes:
     with open(gt_path_test+cl+'_test.txt') as f:
         content = f.readlines()
- #   print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
+    print "Testing one vs. rest SVC for class "+cl+" for "+str(len(content))+" test samples"
     aux = np.load(feat_root+content[0].split(' ')[0]+'.jpg.npy')
     X = np.zeros((len(content),(aux.flatten()).shape[0]), dtype=np.float32)
     y = np.zeros(len(content))
@@ -194,7 +200,7 @@ for cl in classes:
 
     y_ = clf.decision_function(X)
     AP = average_precision_score(y, y_)
-#    print "  ... Test AP: "+str(AP)
+    print "  ... Test AP: "+str(AP)
     mAP2 += AP
 
     # fr = open(res_root+'RES_cls_test_'+cl+'.txt','w+')

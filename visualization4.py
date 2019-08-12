@@ -104,6 +104,7 @@ else:
         print('Step ' + str(step+1) + '/' + str(len(data_loader)))
     print(len(X))
 
+    print("generating word embeddings")
     words = ['airplane', 'car', 'universe', 'planet', 'race car', 'football', 'sport', 'stadium',
              'jet', 'gun', 'computer', 'map', 'sky', 'building', 'train', 'transport']
 
@@ -113,7 +114,7 @@ else:
 
     for word in words:
         process = preprocess_imageclef(word)
-
+        x = []
         if process[1] != '':
             tokens = process[0]
             bow_vector = dictionary.doc2bow(tokens)
@@ -129,7 +130,8 @@ else:
                     labels.append(topic_prob[topic_num])
                 else:
                     labels.append(0)
-
+            X.append(np.array(labels))
+    print(len(X))
     X = np.array(X)
     alpha_values = np.array(alpha_values)
     sigma_values = np.array(sigma_values)
@@ -154,14 +156,14 @@ fig, ax = plt.subplots()
 idxs = []
 
 # scatter random images
-for i in range(20000):
-    idx = int(np.random.choice(len(ids), 1))
-    idxs.append(idx)
-    image_filename = ids[idx]
-    image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
-    imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
-
-plt.show()
+# for i in range(20000):
+#     idx = int(np.random.choice(len(ids), 1))
+#     idxs.append(idx)
+#     image_filename = ids[idx]
+#     image_filename = os.path.join('./../datasets/ImageCLEF_wikipedia/', image_filename)
+#     imscatter(X_embedded[idx, 0], X_embedded[idx, 1], image_filename, zoom=0.20)
+#
+# plt.show()
 
 
 

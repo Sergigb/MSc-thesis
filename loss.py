@@ -23,7 +23,7 @@ def nll_loss(alpha, sigma, mu, t):
 
     for i in range(k):
         likelihood_t = gaussian(t, mu[:, i*t_dim:(i+1)*t_dim], sigma[:, i])
-        loss += alpha[:, i] * likelihood_t  # posterior
+        loss += alpha[:, i] * likelihood_t
     loss = torch.mean(-torch.log(loss))
     return loss
 
