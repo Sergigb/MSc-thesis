@@ -52,7 +52,7 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    model = CNN(40, 2, out_dim=256, mixture_model=True)
+    model = CNN(40, 1, out_dim=256, mixture_model=True)
     #model = models.alexnet(pretrained=False, num_classes=40)
     model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -63,7 +63,7 @@ if not os.path.isdir(feat_root):  # extract features
         global lin_output
         lin_output = output
         return None
-    model.cnn.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of the alexnet
+    model.alexnet.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of the alexnet
 
     if torch.cuda.is_available():
         model.cuda()

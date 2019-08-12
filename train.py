@@ -87,7 +87,7 @@ def main(args):
                 alpha, sigma, mu = cnn(images)
                 loss = loss_fn(alpha, sigma, mu, ts)
             else:
-                out = cnn.alexnet(images)
+                out = cnn.cnn(images)
                 loss = loss_fn(out, ts)
             loss.backward()
             optimizer.step()

@@ -26,7 +26,7 @@ class CNN(nn.Module):
         elif cnn == 'resnet':
             self.cnn = models.resnet152(pretrained=False, num_classes=out_dim)
         else:
-            print("wrong cnn name")
+            print("wrong cnn option")
             exit(0)
 
         if mixture_model:
