@@ -24,7 +24,7 @@ class CNN(nn.Module):
         if cnn == 'alexnet':
             self.cnn = models.alexnet(pretrained=False, num_classes=out_dim)
         elif cnn == 'resnet':
-            self.cnn = models.resnet152(pretrained=False, num_classes=out_dim)
+            self.cnn = models.resnet50(pretrained=False, num_classes=out_dim)
         else:
             print("wrong cnn option")
             exit(0)
