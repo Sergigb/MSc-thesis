@@ -87,7 +87,7 @@ def main(args):
                 alpha, sigma, mu = cnn(images)
                 loss = loss_fn(alpha, sigma, mu, ts)
             else:
-                out = cnn.cnn(images)
+                out = cnn(images)
                 loss = loss_fn(out, ts)
             loss.backward()
             optimizer.step()
@@ -98,7 +98,7 @@ def main(args):
                   str(len(data_loader)) + ' - Loss: ' + str(float(loss)))
         exp.save_loss_epoch(epoch, losses)
         losses = []
-        if (epoch%args.save_step == 0 and epoch > 0):
+        if epoch%args.save_step == 0 and epoch > 0:
             exp.save_model(epoch, cnn)
     
     exp.save_model('last', cnn)

@@ -6,7 +6,7 @@ import torch
 import torch.utils.data as data
 
 
-class CLEF_Wikipedia_dataset(data.Dataset):
+class Wikipedia_dataset(data.Dataset):
     def __init__(self, dataset_path, json_path, transform, return_ids=False):
         """
         dataset_path: path to the dataset
@@ -58,11 +58,10 @@ def collate_fn(data):
         return images, labels, ids
 
 
-
-def get_wiki_data_loader(dataset_path, json_path, transform, 
+def get_wiki_data_loader(dataset_path, json_path, transform,
                          batch_size, shuffle=True, num_workers=4, return_ids=False):
 
-    wiki_dataset = CLEF_Wikipedia_dataset(dataset_path, json_path, transform,
+    wiki_dataset = Wikipedia_dataset(dataset_path, json_path, transform,
                                           return_ids=return_ids)
 
     data_loader = data.DataLoader(dataset=wiki_dataset, batch_size=batch_size,

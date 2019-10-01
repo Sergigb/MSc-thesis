@@ -14,17 +14,12 @@ from sklearn import preprocessing
 
 from model import CNN
 
-
-"""
-check https://github.com/lluisgomez/TextTopicNet/blob/master/experiments/voc_2007_classification.py
-
-right now we can only classify usign the TextTopicNet architecture
-"""
-print("")
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', type=str)
 parser.add_argument('-k', type=int)
+parser.add_argument('-cnn', type=str)
+parser.add_argument('--mixture_model', action='store_true')
+parser.add_argument('--n_topics', type=int, defaul=40)
 args = parser.parse_args()
 
 model_path = args.model_path
@@ -36,9 +31,8 @@ print(model_name)
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
 
-#model_path = 'models/mdn-1kernel6.pth'
 feat_layer = 4  # feature layer, check list(model.alexnet.children())
-feat_root = 'data/features/feats-' + str(feat_layer) + model_name + '/'
+feat_root = 'data/features/feats-' + str(feat_layer) + "-" + model_name + '/'
 
 if not os.path.isdir('data/features'):
     os.mkdir('data/features')
@@ -53,10 +47,7 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    #model = CNN(40, args.k, out_dim=256, mixture_model=True)
-    model = CNN(40, args.k, out_dim=256, mixture_model=True, cnn='resnet')
-
-    #model = models.alexnet(pretrained=False, num_classes=40)
+    model = CNN(args.n_topics, args.k, out_dim=256, mixture_model=args.mixture_model, cnn=args.cnn)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
@@ -67,8 +58,10 @@ if not os.path.isdir(feat_root):  # extract features
         lin_output = output
         return None
 
-    #model.cnn.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of alexnet
-    model.avgpool.register_forward_hook(lin_ret_hook) # in case of resnet
+    if args.cnn == 'alexnet':
+        model.cnn.classifier[feat_layer].register_forward_hook(lin_ret_hook) # in case of alexnet
+    else:
+        model.cnn.avgpool.register_forward_hook(lin_ret_hook) # in case of resnet
 
     if torch.cuda.is_available():
         model.cuda()

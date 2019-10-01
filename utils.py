@@ -15,7 +15,7 @@ def gaussian_np(t, mu, sigma):
 
 def likelihood(alphas, sigmas, mus, x):
     """
-    Computes the likelihood of a sample x given a gmm model
+    Computes the likelihood of a sample x given a gmm
     :param alphas: mixing coefficients
     :param sigmas: covariances of each kernel
     :param mus: expected value of each kernel
@@ -85,6 +85,7 @@ class Experiment:
             f.write('Labels path: ' + str(args.json_labels_path) + '\n')
             f.write('TextTopicNetwork architecture: ' + str(args.ttn) + '\n')
             f.write('CNN: ' + args.cnn + '\n')
+            f.write('Dataset path: ' + args.dataset_path + '\n')
 
     def save_loss(self, epoch, step, loss):
         """

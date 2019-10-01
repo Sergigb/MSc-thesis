@@ -42,7 +42,7 @@ class CNN(nn.Module):
         """
         if self.mixture_model:
             out = self.cnn(x)
-            out = self.relu(out);
+            out = self.relu(out)
             alpha = torch.softmax(self.alpha_out(out), 1)
             sigma = torch.exp(self.sigma_out(out))
             mu = self.mu_out(out)

@@ -11,6 +11,7 @@ import torch
 import torchvision.transforms as transforms
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
+from PIL import Image
 
 from model import CNN
 from utils import likelihood
@@ -66,13 +67,25 @@ query_type = sys.argv[1]
 ### Start : Generating image representations of wikipedia dataset for performing multi modal retrieval
 text_dir_wd = '../datasets/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
 images_root = '../datasets/Wikipedia/images_wd_256/'
-model_path = 'models/mdn-3kernel6.pth'
-feat_root = 'data/features/mdn-3kernel6/'
-mixture_model = True
-n_kernels = 3
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--model_path', type=str)
+parser.add_argument('-k', type=int)
+parser.add_argument('-cnn', type=str)
+parser.add_argument('--mixture_model', type=str)
+parser.add_argument('--n_topics', type=int, defaul=40)
+parser.add_argument('--distance', type=str, defaul=40, default="probability")
+args = parser.parse_args()
+
+model_path = args.model_path
+feat_root = 'data/features/' + model_path.split("/")[-1]
+cnn = args.cnn
+mixture_model = args.mixture_model
+n_kernels = args.k
 out_dim = 256
-num_topics = 40
-dist = 'probability'  # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
+num_topics = args.n_topics
+dist = args.distance # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
+visualize_results = False
 
 print(model_path)
 
@@ -89,15 +102,13 @@ if not os.path.isdir(feat_root):  # extract features
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
     ])
 
-    model = CNN(num_topics, n_kernels, mixture_model=mixture_model, out_dim=out_dim)
-    # model = models.alexnet(pretrained=False, num_classes=40)
+    model = CNN(num_topics, n_kernels, mixture_model=mixture_model, out_dim=out_dim, cnn=cnn)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
     if torch.cuda.is_available():
         model.cuda()
 
-    # image_names = [f for f in os.listdir(images_root)]
     im_txt_pair_wd = open('../datasets/Wikipedia/wikipedia_dataset/' +
                           str(type_data_list[0])+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
     img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
@@ -113,7 +124,6 @@ if not os.path.isdir(feat_root):  # extract features
 
         if not mixture_model:
             representation = model(im)
-            # representation = torch.nn.functional.softmax(representation)
         else:
             alpha, sigma, representation = model(im)
 
@@ -136,10 +146,13 @@ min_prob_LDA = None
 
 # load id <-> term dictionary
 dictionary = gensim.corpora.Dictionary.load('./LDA/dictionary_original.dict')
-# dictionary.filter_extremes(no_below=20, no_above=0.5)  # comment this when using the original dictionary
+#dictionary = gensim.corpora.Dictionary.load('./LDA/dictionary.dict')
+#dictionary = gensim.corpora.Dictionary.load('./wiki/dictionary.dict')
+#dictionary.filter_extremes(no_below=20, no_above=0.5)  # comment this when using the original dictionary
 
 # load LDA model
 ldamodel = gensim.models.ldamulticore.LdaMulticore.load('./LDA/ldamodel' + str(num_topics) + '_original.lda', mmap='r')
+#ldamodel = gensim.models.ldamulticore.LdaMulticore.load('./LDA/ldamodel' + str(num_topics) + '.lda', mmap='r')
 
 for choose_set in choose_set_list:
     # Read image-text document pair ids
@@ -210,11 +223,12 @@ for type_data in type_data_list:
     for i in GT_img2txt.keys():
         sample = i
         value = np.load(image_rep + i + '.jpg.npy')
-        alpha = np.load(image_rep + i + '.jpg-alpha.npy')
-        sigma = np.load(image_rep + i + '.jpg-sigma.npy')
         image_ttp[sample] = value
-        image_alphas[sample] = alpha
-        image_sigmas[sample] = sigma
+        if mixture_model:
+            alpha = np.load(image_rep + i + '.jpg-alpha.npy')
+            sigma = np.load(image_rep + i + '.jpg-sigma.npy')
+            image_alphas[sample] = alpha
+            image_sigmas[sample] = sigma
 
     # Convert text_rep to numpy format
     text_ttp = {}
@@ -233,8 +247,9 @@ for type_data in type_data_list:
 
             score_texts = []
             image_reps = image_ttp[given_image]
-            image_alpha = image_alphas[given_image]
-            image_sigma = image_sigmas[given_image]
+            if mixture_model:
+                image_alpha = image_alphas[given_image]
+                image_sigma = image_sigmas[given_image]
             for given_text in order_of_texts:
                 text_reps = text_ttp[given_text]
                 if dist == 'euclidean':
@@ -269,8 +284,9 @@ for type_data in type_data_list:
             text_reps = text_ttp[given_text]
             for given_image in order_of_images:
                 image_reps = image_ttp[given_image]
-                image_alpha = image_alphas[given_image]
-                image_sigma = image_sigmas[given_image]
+                if mixture_model:
+                    image_alpha = image_alphas[given_image]
+                    image_sigma = image_sigmas[given_image]
                 if dist == 'euclidean':
                     min_score = 99999999999
                     for j in range(n_kernels):
@@ -292,23 +308,20 @@ for type_data in type_data_list:
                     score_images.append((given_image, given_score))
             sorted_scores = sorted(score_images, key=lambda x: x[1], reverse=False)
 
-#            image_categories = ['art', 'biology', 'geography', 'history', 'literature', 'media', 'music', 'royalty',
-#                                'sport', 'warfare']  # List of document (image-text) categories in wikipedia dataset
-#            f, axarr = plt.subplots(2, 10)
-#            for i in range(20):
-#                if i - 10 < 0:
-#                    xi = i
-#                    yi = 0
-#                else:
-#                    xi = i - 10
-#                    yi = 1
-#                axarr[yi, xi].imshow(plt.imread('../datasets/Wikipedia/images_wd_256/' + sorted_scores[i+1][0] + '.jpg'))
-#                axarr[yi, xi].axis('off')
-#                axarr[yi, xi].set_title(image_categories[int(GT_img2txt[sorted_scores[i+1][0]][1])-1] + "("
-#                                        + str(sorted_scores[i+1][1])[:4] + ")")
-#            plt.suptitle(image_categories[int(GT_txt2img[given_text][1])-1])
-#            plt.show()
-#
+            if visualize_results:
+                image_categories = ['art', 'biology', 'geography', 'history', 'literature', 'media', 'music', 'royalty',
+                                    'sport', 'warfare']  # List of document (image-text) categories in wikipedia dataset
+                f, axarr = plt.subplots(1, 5)
+                for i in range(5):
+                    img = Image.open('../datasets/Wikipedia/images_wd_256/' + sorted_scores[i+1][0] + '.jpg')
+                    img = img.resize((512, 512), Image.ANTIALIAS)
+                    axarr[i].imshow(np.array(img), cmap='gray')
+                    axarr[i].axis('off')
+                    axarr[i].set_title(image_categories[int(GT_img2txt[sorted_scores[i+1][0]][1])-1] + "("
+                                            + str(1 - sorted_scores[i+1][1])[:4] + ")")
+                plt.suptitle("Text query topic: " + image_categories[int(GT_txt2img[given_text][1])-1])
+                plt.show()
+
             mAP = mAP + get_AP_txt2img(sorted_scores, given_text, top_k=len(order_of_images))
 
             counter += 1
