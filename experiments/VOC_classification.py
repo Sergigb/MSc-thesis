@@ -12,6 +12,8 @@ from sklearn.externals import joblib
 from sklearn.metrics import average_precision_score
 from sklearn import preprocessing
 
+sys.path.insert(1, '../')
+
 from model import CNN
 
 parser = argparse.ArgumentParser()
@@ -19,26 +21,26 @@ parser.add_argument('--model_path', type=str)
 parser.add_argument('-k', type=int)
 parser.add_argument('-cnn', type=str, default="alexnet")
 parser.add_argument('--mixture_model', action='store_true')
-parser.add_argument('--n_topics', type=int, defaul=40)
+parser.add_argument('--n_topics', type=int, default=40)
 args = parser.parse_args()
 
 model_path = args.model_path
-model_name = model_path.replace("/", "")
+model_name = model_path.split("/")[-1]
 
 print(model_path)
 print(model_name)
 
-images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
-images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
+images_train_root = '../../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
+images_val_root = '../../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
 
 if args.cnn == "alexnet":
     feat_layer = 4  # feature layer, check list(model.alexnet.children())
 else:
     feat_layer = "avgpool"
-feat_root = 'data/features/feats-' + str(feat_layer) + "-" + model_name + '/'
+feat_root = '../data/features/feats-' + str(feat_layer) + "-" + model_name + '/'
 
-if not os.path.isdir('data/features'):
-    os.mkdir('data/features')
+if not os.path.isdir('../data/features'):
+    os.mkdir('../data/features')
 
 if not os.path.isdir(feat_root):  # extract features
     os.mkdir(feat_root)
@@ -92,10 +94,10 @@ if not os.path.isdir(feat_root):  # extract features
 print("")
 
 
-svm_path = 'data/svm-' + model_name + '/'
-gt_path = '../datasets/VOCdevkit/VOC2007-train/ImageSets/Main/'
-gt_path_test = '../datasets/VOCdevkit/VOC2007-val/ImageSets/Main/'
-scaler_path = 'data/scaler'
+svm_path = '../data/svm-' + model_name + '/'
+gt_path = '../../datasets/VOCdevkit/VOC2007-train/ImageSets/Main/'
+gt_path_test = '../../datasets/VOCdevkit/VOC2007-val/ImageSets/Main/'
+scaler_path = '../data/scaler'
 scaler_fname = 'scaler-layer-' + str(feat_layer) + model_name + '.pkl'
 
 if not os.path.exists(svm_path):

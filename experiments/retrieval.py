@@ -9,13 +9,15 @@ import numpy as np
 from PIL import Image
 import gensim
 import scipy.stats as sp
-from preprocess_text import preprocess_imageclef
 import torch
 import torchvision.transforms as transforms
 from scipy.spatial import distance
 import matplotlib.pyplot as plt
 from PIL import Image
 
+sys.path.insert(1, '../')
+
+from preprocess_text import preprocess_imageclef
 from model import CNN
 from utils import likelihood
 
@@ -63,8 +65,8 @@ def get_AP_txt2img(sorted_scores, given_text, top_k):
 
 
 ### Start : Generating image representations of wikipedia dataset for performing multi modal retrieval
-text_dir_wd = '../datasets/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
-images_root = '../datasets/Wikipedia/images_wd_256/'
+text_dir_wd = '../../datasets/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
+images_root = '../../datasets/Wikipedia/images_wd_256/'
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', type=str)
@@ -77,7 +79,7 @@ parser.add_argument('--query_type', type=str)
 args = parser.parse_args()
 
 model_path = args.model_path
-feat_root = 'data/features/' + model_path.split("/")[-1].split(".")[0] + "/"
+feat_root = '../data/features/' + model_path.split("/")[-1].split(".")[0] + "/"
 cnn = args.cnn
 mixture_model = args.mixture_model
 n_kernels = args.k
@@ -91,8 +93,8 @@ if not mixture_model:
 
 print(model_path)
 
-if not os.path.isdir('data/features'):
-    os.mkdir('data/features')
+if not os.path.isdir('../data/features'):
+    os.mkdir('../data/features')
 
 if not os.path.isdir(feat_root):  # extract features
     os.mkdir(feat_root)
@@ -111,7 +113,7 @@ if not os.path.isdir(feat_root):  # extract features
     if torch.cuda.is_available():
         model.cuda()
 
-    im_txt_pair_wd = open('../datasets/Wikipedia/wikipedia_dataset/' +
+    im_txt_pair_wd = open('../../datasets/Wikipedia/wikipedia_dataset/' +
                           str(type_data_list[0])+'set_txt_img_cat.list', 'r').readlines() # Image-text pairs
     img_files = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd] # List of image files in wikipedia dataset
 
@@ -147,20 +149,20 @@ choose_set_list = type_data_list
 min_prob_LDA = None
 
 # load id <-> term dictionary
-dictionary = gensim.corpora.Dictionary.load('./LDA/dictionary_original.dict')
-#dictionary = gensim.corpora.Dictionary.load('./LDA/dictionary.dict')
-#dictionary = gensim.corpora.Dictionary.load('./wiki/dictionary.dict')
+dictionary = gensim.corpora.Dictionary.load('../LDA/dictionary_original.dict')
+#dictionary = gensim.corpora.Dictionary.load('../LDA/dictionary.dict')
+#dictionary = gensim.corpora.Dictionary.load('../wiki/dictionary.dict')
 #dictionary.filter_extremes(no_below=20, no_above=0.5)  # comment this when using the original dictionary
 
 # load LDA model
-ldamodel = gensim.models.ldamulticore.LdaMulticore.load('./LDA/ldamodel' + str(num_topics) + '_original.lda', mmap='r')
-#ldamodel = gensim.models.ldamulticore.LdaMulticore.load('./LDA/ldamodel' + str(num_topics) + '.lda', mmap='r')
+ldamodel = gensim.models.ldamulticore.LdaMulticore.load('../LDA/ldamodel' + str(num_topics) + '_original.lda', mmap='r')
+#ldamodel = gensim.models.ldamulticore.LdaMulticore.load('../LDA/ldamodel' + str(num_topics) + '.lda', mmap='r')
 
 for choose_set in choose_set_list:
     # Read image-text document pair ids
-    im_txt_pair_wd = open('../datasets/Wikipedia/wikipedia_dataset/' + str(choose_set) + 'set_txt_img_cat.list', 'r').readlines()
+    im_txt_pair_wd = open('../../datasets/Wikipedia/wikipedia_dataset/' + str(choose_set) + 'set_txt_img_cat.list', 'r').readlines()
     text_files_wd = [text_dir_wd + i.split('\t')[0] + '.xml' for i in im_txt_pair_wd]
-    output_path_root = './data/multi_modal_retrieval/text/'
+    output_path_root = '../data/multi_modal_retrieval/text/'
     if not os.path.exists(output_path_root):
         os.makedirs(output_path_root)
     output_file_path = 'wd_txt_' + str(num_topics) + '_' + str(choose_set) + '.json'
@@ -201,7 +203,7 @@ for choose_set in choose_set_list:
 
 for type_data in type_data_list:
     # Wikipedia data paths
-    im_txt_pair_wd = open('../datasets/Wikipedia/wikipedia_dataset/' + str(type_data) + 'set_txt_img_cat.list', 'r').readlines()
+    im_txt_pair_wd = open('../../datasets/Wikipedia/wikipedia_dataset/' + str(type_data) + 'set_txt_img_cat.list', 'r').readlines()
     image_files_wd = [i.split('\t')[1] + '.jpg' for i in im_txt_pair_wd]
 
     # Read the required Grount Truth for the task.
@@ -216,7 +218,7 @@ for type_data in type_data_list:
 
     # Load text representation
     data_text = json.load(
-        open('./data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json',
+        open('../data/multi_modal_retrieval/text/wd_txt_' + str(num_topics) + '_' + str(type_data) + '.json',
              'r'))
 
     image_ttp = {}
@@ -315,7 +317,7 @@ for type_data in type_data_list:
                                     'sport', 'warfare']  # List of document (image-text) categories in wikipedia dataset
                 f, axarr = plt.subplots(1, 5)
                 for i in range(5):
-                    img = Image.open('../datasets/Wikipedia/images_wd_256/' + sorted_scores[i+1][0] + '.jpg')
+                    img = Image.open('../../datasets/Wikipedia/images_wd_256/' + sorted_scores[i+1][0] + '.jpg')
                     img = img.resize((512, 512), Image.ANTIALIAS)
                     axarr[i].imshow(np.array(img), cmap='gray')
                     axarr[i].axis('off')
