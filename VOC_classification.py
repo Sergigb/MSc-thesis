@@ -17,7 +17,7 @@ from model import CNN
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', type=str)
 parser.add_argument('-k', type=int)
-parser.add_argument('-cnn', type=str)
+parser.add_argument('-cnn', type=str, default="alexnet")
 parser.add_argument('--mixture_model', action='store_true')
 parser.add_argument('--n_topics', type=int, defaul=40)
 args = parser.parse_args()
@@ -31,7 +31,10 @@ print(model_name)
 images_train_root = '../datasets/VOCdevkit/VOC2007-train/JPEGImages/'
 images_val_root = '../datasets/VOCdevkit/VOC2007-val/JPEGImages/'
 
-feat_layer = 4  # feature layer, check list(model.alexnet.children())
+if args.cnn == "alexnet":
+    feat_layer = 4  # feature layer, check list(model.alexnet.children())
+else:
+    feat_layer = "avgpool"
 feat_root = 'data/features/feats-' + str(feat_layer) + "-" + model_name + '/'
 
 if not os.path.isdir('data/features'):

@@ -1,7 +1,10 @@
 from __future__ import division
 
-import sys, os
+import sys
+import os
 import json
+import argparse
+
 import numpy as np
 from PIL import Image
 import gensim
@@ -59,11 +62,6 @@ def get_AP_txt2img(sorted_scores, given_text, top_k):
         return float(sum_term / T)
 
 
-if len(sys.argv) < 2:
-    print 'Please enter the type of query. Eg txt2img, img2txt'
-    quit()
-query_type = sys.argv[1]
-
 ### Start : Generating image representations of wikipedia dataset for performing multi modal retrieval
 text_dir_wd = '../datasets/Wikipedia/texts_wd/' # Path to wikipedia dataset text files
 images_root = '../datasets/Wikipedia/images_wd_256/'
@@ -71,14 +69,15 @@ images_root = '../datasets/Wikipedia/images_wd_256/'
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_path', type=str)
 parser.add_argument('-k', type=int)
-parser.add_argument('-cnn', type=str)
-parser.add_argument('--mixture_model', type=str)
-parser.add_argument('--n_topics', type=int, defaul=40)
-parser.add_argument('--distance', type=str, defaul=40, default="probability")
+parser.add_argument('-cnn', type=str, default="alexnet")
+parser.add_argument('--mixture_model', action='store_true')
+parser.add_argument('--n_topics', type=int, default=40)
+parser.add_argument('--distance', type=str, default="probability")
+parser.add_argument('--query_type', type=str)
 args = parser.parse_args()
 
 model_path = args.model_path
-feat_root = 'data/features/' + model_path.split("/")[-1]
+feat_root = 'data/features/' + model_path.split("/")[-1].split(".")[0] + "/"
 cnn = args.cnn
 mixture_model = args.mixture_model
 n_kernels = args.k
@@ -86,6 +85,9 @@ out_dim = 256
 num_topics = args.n_topics
 dist = args.distance # distance used in the retrieval part, 'entropy', 'euclidean' or 'probability'
 visualize_results = False
+
+if not mixture_model:
+    n_kernels = 1
 
 print(model_path)
 
@@ -240,7 +242,7 @@ for type_data in type_data_list:
     order_of_images = sorted(image_ttp.keys())
     order_of_texts = sorted(text_ttp.keys())
     counter = 0
-    if query_type == 'img2txt':
+    if args.query_type == 'img2txt':
         for given_image in order_of_images:
             sys.stdout.write('\rPerforming retrieval for document number : ' + str(counter))
             sys.stdout.flush()
@@ -275,7 +277,7 @@ for type_data in type_data_list:
             mAP = mAP + get_AP_img2txt(sorted_scores, given_image, top_k=len(order_of_texts))
             counter += 1
         print('MAP img2txt : ' + str(float(mAP / len(image_ttp.keys()))), 'red')
-    if query_type == 'txt2img':
+    if args.query_type == 'txt2img':
         for given_text in order_of_texts:
             sys.stdout.write('\rPerforming retrieval for document number : ' + str(counter))
             sys.stdout.flush()

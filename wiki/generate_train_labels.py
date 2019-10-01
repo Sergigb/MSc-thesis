@@ -9,7 +9,6 @@ import gensim
 from gensim import utils, corpora, models
 from gensim.corpora.wikicorpus import remove_markup
 
-import sys
 sys.path.insert(1, '../LDA/')
 from preprocess_text import preprocess
 
@@ -60,7 +59,7 @@ for data_pairs_file in data_pairs_files:
         if img_path.find('.webp') != -1 or img_path.find('.tif') != -1 or img_path.find('.tiff') != -1:
             ignored += 1
             continue
-        img_path = img_path.split("/")[-1]
+        img_path = img_path.replace("../../datasets/ali/", "")
         tokens = preprocess(raw)
         bow_vector = dictionary.doc2bow(tokens)
         lda_vector = ldamodel.get_document_topics(bow_vector, minimum_probability=None)
@@ -71,18 +70,19 @@ for data_pairs_file in data_pairs_files:
         labels = []
         for topic_num in range(0,NUM_TOPICS):
             if topic_num in topic_prob.keys():
-              labels.append(float(topic_prob[topic_num]))
+                labels.append(float(topic_prob[topic_num]))
             else:
-              labels.append(0)
+                labels.append(0)
         target_labels_temp[img_path] = labels
-        sys.stdout.write('\rDocuments processed: ' + str(len(target_labels.keys())+ len(target_labels_temp.keys())) + ", ignored documents: " + str(ignored))
+        sys.stdout.write('\rDocuments processed: ' + str(len(target_labels.keys())+ len(target_labels_temp.keys()))
+                         + ", ignored articles: " + str(ignored))
         sys.stdout.flush()
     temp = target_labels_temp.copy()
     target_labels.update(temp)
     del target_labels_temp
 
 sys.stdout.write(' Done!\n')
-print("Ignored images: " + str(ignored))
+print("Ignored articles: " + str(ignored))
 # save key,labels pairs into json format file
 with open('./training_labels'+str(NUM_TOPICS)+'.json','w') as fp:
   json.dump(target_labels, fp)

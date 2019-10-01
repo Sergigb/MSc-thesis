@@ -126,7 +126,7 @@ if __name__ == '__main__':
     parser.add_argument('--save_step', type=int, default=20,
                         help='')
     parser.add_argument('-ne', type=int, default=100, help='Number of epochs')
-    parser.add_argument('-bs', type=int, default=1024, help='Size of the batch')
+    parser.add_argument('-bs', type=int, default=64, help='Size of the batch')
     parser.add_argument('-ttn', action='store_true', help='If true, replicates the TextTopicNet \
                         architecture')
     parser.add_argument('-cnn', type=str, help='Name of the cnn used to extract the features, can \
