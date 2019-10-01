@@ -1,11 +1,9 @@
-import time
-
 import torch
 import torch.optim as optim
 import torchvision.transforms as transforms
 import argparse
 
-from utils import Experiment, update_lr
+from utils import Experiment, update_lr, update_lr_epoch
 from model import CNN
 from loss import nll_loss
 from data_loader import get_wiki_data_loader
@@ -19,7 +17,6 @@ from data_loader import get_wiki_data_loader
 # - (done) save the model each epoch/n-steps
 # - resume experiment
 # - optimizer as a parameter?
-# - fix the learning rate thing from lluis' code
 # - (done)lr decay
 ##################
 
@@ -72,10 +69,7 @@ def main(args):
     losses = []
 
     for epoch in range(num_epochs):
-        if (epoch%args.decay_step == 0 and epoch > 0):  # move this to the utils file
-            learning_rate = learning_rate * args.decay
-            for param_group in optimizer.param_groups:
-                param_group['lr'] = learning_rate
+        learning_rate = update_lr_epoch(epoch, args, learning_rate, optimizer)
 
         for step, (images, ts) in enumerate(data_loader):
             if torch.cuda.is_available():

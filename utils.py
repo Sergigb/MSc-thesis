@@ -50,6 +50,14 @@ def update_lr(lr, decay, epoch, optimizer):
         param_group['lr'] = lr_
 
 
+def update_lr_epoch(epoch, args, learning_rate, optimizer):
+    if epoch % args.decay_step == 0 and epoch > 0:
+        learning_rate = learning_rate * args.decay
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = learning_rate
+    return learning_rate
+
+
 class Experiment:
     def __init__(self, args, exp_name):
         """
