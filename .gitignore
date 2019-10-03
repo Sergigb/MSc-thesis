@@ -11,7 +11,7 @@ exps/*
 data/*
 lluis/
 models/
-toy_model/images/*
+toy_test/images/*
 .idea/
 *.sh
 
