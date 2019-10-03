@@ -4,7 +4,7 @@ import torchvision.models as models
 
 
 class CNN(nn.Module):
-    def __init__(self, t_dim, k, out_dim=None, mixture_model=True, cnn='alexnet'):
+    def __init__(self, t_dim, k, out_dim=None, mixture_model=True, cnn='alexnet', pretrained=False):
         """
         :param t_dim: dimensionality of the target space (number of LDA topics)
         :param k: number of Gaussian kernels
@@ -22,9 +22,9 @@ class CNN(nn.Module):
 
         self.mixture_model = mixture_model
         if cnn == 'alexnet':
-            self.cnn = models.alexnet(pretrained=False, num_classes=out_dim)
+            self.cnn = models.alexnet(pretrained=pretrained, num_classes=out_dim)
         elif cnn == 'resnet':
-            self.cnn = models.resnet50(pretrained=False, num_classes=out_dim)
+            self.cnn = models.resnet50(pretrained=pretrained, num_classes=out_dim)
         else:
             print("wrong cnn option")
             exit(0)

@@ -1,13 +1,8 @@
-import os,sys,re
+import os
 import json
 
-from nltk.tokenize import RegexpTokenizer
-# from stop_words import get_stop_words
-from nltk.stem.porter import PorterStemmer
-
 import gensim
-from gensim import utils, corpora, models
-from gensim.corpora.wikicorpus import remove_markup
+from gensim import corpora, models
 
 import sys
 sys.path.insert(1, '../LDA/')
