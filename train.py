@@ -46,9 +46,9 @@ def main(args):
     else:
         out_dim = args.out_dim
     if args.ttn:
-        cnn = CNN(args.n_topics, args.n_kernels, mixture_model=False, cnn=args.cnn)
+        cnn = CNN(args.n_topics, args.n_kernels, mixture_model=False, cnn=args.cnn, pretrained=args.pretrained)
     else:
-        cnn = CNN(args.n_topics, args.n_kernels, out_dim=out_dim, cnn=args.cnn)
+        cnn = CNN(args.n_topics, args.n_kernels, out_dim=out_dim, cnn=args.cnn, pretrained=args.pretrained)
 
     if torch.cuda.is_available():
         cnn.cuda()
@@ -84,6 +84,8 @@ def main(args):
                 out = cnn(images)
                 loss = loss_fn(out, ts)
             loss.backward()
+            if args.clipping != 0.:
+                torch.nn.utils.clip_grad_norm_(CNN.parameters(), args.clip)
             optimizer.step()
 
             losses.append(float(loss))
@@ -121,16 +123,18 @@ if __name__ == '__main__':
                         help='Number size of the output vector of the CNN')
     parser.add_argument('--decay', type=float, default=0.1,
                         help='Decay of the learning rate')
-    parser.add_argument('--decay_step', type=int, default=20,
-                        help='')
-    parser.add_argument('--save_step', type=int, default=20,
-                        help='')
+    parser.add_argument('--decay_epoch', type=int, default=20,
+                        help='Indicates the epoch where we want to reduce the learning rate')
+    parser.add_argument('--save_epoch', type=int, default=20,
+                        help='Epoch where we want our model to be saved')
     parser.add_argument('-ne', type=int, default=100, help='Number of epochs')
     parser.add_argument('-bs', type=int, default=64, help='Size of the batch')
     parser.add_argument('-ttn', action='store_true', help='If true, replicates the TextTopicNet \
                         architecture')
     parser.add_argument('-cnn', type=str, help='Name of the cnn used to extract the features, can \
                         be alexnet or resnet', default="alexnet")
+    parser.add_argument('--pretrained', type=str, help='Uses a pretrained CNN', action='store_true')
+    parser.add_argument('--clipping', type=float, default=0., help='Gradient clipping')
     args = parser.parse_args()
 
     main(args)
