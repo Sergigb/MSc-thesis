@@ -133,7 +133,7 @@ if __name__ == '__main__':
                         architecture')
     parser.add_argument('-cnn', type=str, help='Name of the cnn used to extract the features, can \
                         be alexnet or resnet', default="alexnet")
-    parser.add_argument('--pretrained', type=str, help='Uses a pretrained CNN', action='store_true')
+    parser.add_argument('--pretrained', help='Uses a pretrained CNN', action='store_true')
     parser.add_argument('--clipping', type=float, default=0., help='Gradient clipping')
     args = parser.parse_args()
 
