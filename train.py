@@ -85,7 +85,7 @@ def main(args):
                 loss = loss_fn(out, ts)
             loss.backward()
             if args.clipping != 0.:
-                torch.nn.utils.clip_grad_norm_(CNN.parameters(), args.clip)
+                torch.nn.utils.clip_grad_norm_(cnn.parameters(), args.clipping)
             optimizer.step()
 
             losses.append(float(loss))
@@ -94,7 +94,7 @@ def main(args):
                   str(len(data_loader)) + ' - Loss: ' + str(float(loss)))
         exp.save_loss_epoch(epoch, losses)
         losses = []
-        if epoch%args.save_step == 0 and epoch > 0:
+        if epoch%args.save_epoch == 0 and epoch > 0:
             exp.save_model(epoch, cnn)
     
     exp.save_model('last', cnn)

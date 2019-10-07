@@ -22,12 +22,19 @@ class CNN(nn.Module):
 
         self.mixture_model = mixture_model
         if cnn == 'alexnet':
-            model = models.alexnet(pretrained=pretrained)
-            model.classifier = model.classifier[:-1]
-            self.cnn = nn.Sequential(model, nn.Linear(4096, out_dim))
+            if pretrained:
+                model = models.alexnet(pretrained=True)
+                model.classifier = model.classifier[:-1]
+                self.cnn = nn.Sequential(model, nn.Linear(4096, out_dim))
+            else:  # kept for compatibility with older models
+                self.cnn = models.alexnet(pretrained=False, num_classes=out_dim)
+
         elif cnn == 'resnet':
-            model = models.resnet50(pretrained=pretrained, num_classes=out_dim)
-            self.cnn = nn.Sequential(list(model.children())[:-1], nn.Linear(2048, out_dim))
+            if pretrained:
+                model = models.resnet50(pretrained=True, num_classes=out_dim)
+                self.cnn = nn.Sequential(list(model.children())[:-1], nn.Linear(2048, out_dim))
+            else:
+                self.cnn = models.resnet50(pretrained=False, num_classes=out_dim)
         else:
             print("wrong cnn option")
             exit(0)
